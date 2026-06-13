@@ -62,9 +62,9 @@ async function extractFromPdf(bytes: Buffer): Promise<ParsedProduct[]> {
         {
           type: 'document',
           source: { type: 'base64', media_type: 'application/pdf', data: bytes.toString('base64') },
-        } as Parameters<typeof client.messages.create>[0]['messages'][0]['content'][number],
+        },
         { type: 'text', text: 'Extract all products and prices from this document.' },
-      ],
+      ] as Anthropic.ContentBlockParam[],
     }],
   })
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
