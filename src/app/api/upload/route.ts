@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import { writeFile } from 'fs/promises'
-import path from 'path'
+import { put } from '@vercel/blob'
 import { randomUUID } from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -23,15 +22,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Arquivo muito grande. Máximo 5MB.' }, { status: 400 })
     }
 
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const filename = `${randomUUID()}.${ext}`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-    const filepath = path.join(uploadDir, filename)
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const blob = await put(`uploads/${randomUUID()}.${ext}`, file, {
+      access: 'public',
+      contentType: file.type,
+    })
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-    await writeFile(filepath, buffer)
-
-    return NextResponse.json({ url: `/uploads/${filename}` }, { status: 201 })
+    return NextResponse.json({ url: blob.url }, { status: 201 })
   } catch (err) {
     console.error('Upload error:', err)
     return NextResponse.json({ error: 'Erro ao processar upload.' }, { status: 500 })
