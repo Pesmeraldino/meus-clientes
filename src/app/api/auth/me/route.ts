@@ -14,9 +14,6 @@ export async function PUT(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 })
 
   try {
-    // Ensure avatar_url column exists (idempotent migration)
-    await query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT')
-
     const { name, avatar_url } = await req.json()
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Nome é obrigatório.' }, { status: 400 })
