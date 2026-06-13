@@ -10,30 +10,61 @@ export function ThemeToggle() {
   }, [])
 
   function toggle() {
-    const html = document.documentElement
-    const next = !html.classList.contains('dark')
-    html.classList.toggle('dark', next)
+    const next = !isDark
+    document.documentElement.classList.toggle('dark', next)
     localStorage.setItem('theme', next ? 'dark' : 'light')
     setIsDark(next)
   }
 
   return (
     <button
+      role="switch"
+      aria-checked={isDark}
       onClick={toggle}
-      className="btn btn-ghost btn-sm"
-      aria-label="Alternar tema"
-      title={isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-      style={{ padding: '6px', borderRadius: 'var(--radius)' }}
+      title={isDark ? 'Modo claro' : 'Modo escuro'}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        width: 40,
+        height: 22,
+        borderRadius: 11,
+        border: '1px solid var(--border-default)',
+        background: isDark ? 'var(--accent)' : 'var(--bg-tertiary)',
+        cursor: 'pointer',
+        padding: 0,
+        position: 'relative',
+        transition: 'background 0.25s ease, border-color 0.25s ease',
+        flexShrink: 0,
+      }}
     >
-      {isDark ? (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 1.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11zM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0zm0 13a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 13zM2.343 2.343a.75.75 0 0 1 1.061 0l1.06 1.061a.75.75 0 0 1-1.06 1.06l-1.061-1.06a.75.75 0 0 1 0-1.061zm9.193 9.193a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 0 1-1.06 1.061l-1.061-1.06a.75.75 0 0 1 0-1.061zM0 8a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H.75A.75.75 0 0 1 0 8zm13 0a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 13 8zM2.343 13.657a.75.75 0 0 1 0-1.06l1.061-1.061a.75.75 0 0 1 1.06 1.06l-1.06 1.061a.75.75 0 0 1-1.061 0zm9.193-9.193a.75.75 0 0 1 0-1.06l1.06-1.061a.75.75 0 0 1 1.061 1.06l-1.06 1.061a.75.75 0 0 1-1.061 0z"/>
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path fillRule="evenodd" d="M9.598 1.591a.749.749 0 0 1 .785-.175 7.001 7.001 0 1 1-8.967 8.967.75.75 0 0 1 .961-.96 5.5 5.5 0 0 0 7.046-7.046.75.75 0 0 1 .175-.786zm1.616 1.945a7 7 0 0 1-7.678 7.678 5.499 5.499 0 1 0 7.678-7.678z"/>
-        </svg>
-      )}
+      {/* Knob */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: 2,
+          left: isDark ? 19 : 2,
+          width: 16,
+          height: 16,
+          borderRadius: '50%',
+          background: '#fff',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.22)',
+          transition: 'left 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {isDark ? (
+          <svg width="8" height="8" viewBox="0 0 16 16" fill="#5a4a38" aria-hidden="true">
+            <path fillRule="evenodd" d="M9.598 1.591a.749.749 0 0 1 .785-.175 7.001 7.001 0 1 1-8.967 8.967.75.75 0 0 1 .961-.96 5.5 5.5 0 0 0 7.046-7.046.75.75 0 0 1 .175-.786z"/>
+          </svg>
+        ) : (
+          <svg width="8" height="8" viewBox="0 0 16 16" fill="#7c5c3a" aria-hidden="true">
+            <circle cx="8" cy="8" r="3.5"/>
+          </svg>
+        )}
+      </span>
     </button>
   )
 }

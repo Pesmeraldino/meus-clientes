@@ -2,6 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
+  avatar_url?: string | null
   created_at: string
   updated_at: string
 }
@@ -14,6 +15,13 @@ export interface Company {
   image_url: string | null
   created_at: string
   updated_at: string
+}
+
+export interface CompanyWithStats extends Company {
+  total_revenue: number
+  total_sales: number
+  last_sale_date: string | null
+  heat: 'hot' | 'warm' | 'cold'
 }
 
 export interface Product {
@@ -42,6 +50,7 @@ export interface Sale {
   company_id: string
   client_id: string
   product_id: string
+  order_id: string | null
   quantity: number
   unit_price: number
   total_price: number
@@ -50,6 +59,12 @@ export interface Sale {
   created_at: string
   client_name?: string
   product_name?: string
+}
+
+export interface SaleItem {
+  product_id: string
+  quantity: number
+  unit_price: number
 }
 
 export interface CompanyStats {
@@ -67,4 +82,5 @@ export interface AuthUser {
   id: string
   name: string
   email: string
+  avatar_url?: string | null
 }

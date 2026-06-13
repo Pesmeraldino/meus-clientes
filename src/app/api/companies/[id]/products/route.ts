@@ -51,3 +51,46 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
   }
 }
+
+// Batch import — accepts { products: [{name, description, price}] }
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 })
+
+  const { id } = await params
+  if (!(await verifyCompany(id, session.id))) {
+    return NextResponse.json({ error: 'Empresa não encontrada.' }, { status: 404 })
+  }
+
+  try {
+    const { products } = await req.json() as { products: { name: string; description?: string | null; price: number }[] }
+
+    if (!Array.isArray(products) || products.length === 0) {
+      return NextResponse.json({ error: 'Lista de produtos vazia.' }, { status: 400 })
+    }
+    if (products.length > 5000) {
+      return NextResponse.json({ error: 'Máximo de 5000 produtos por importação.' }, { status: 400 })
+    }
+
+    const invalid = products.find(p => !p.name?.trim())
+    if (invalid) return NextResponse.json({ error: 'Todos os produtos precisam de um nome.' }, { status: 400 })
+
+    // Build a single multi-row INSERT for efficiency
+    const values: unknown[] = []
+    const placeholders = products.map((p, i) => {
+      const base = i * 4
+      values.push(id, p.name.trim(), p.description?.trim() ?? null, Math.max(0, Number(p.price) || 0))
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`
+    })
+
+    const inserted = await query<Product>(
+      `INSERT INTO products (company_id, name, description, price) VALUES ${placeholders.join(', ')} RETURNING *`,
+      values
+    )
+
+    return NextResponse.json({ products: inserted, count: inserted.length }, { status: 201 })
+  } catch (err) {
+    console.error('Batch import error:', err)
+    return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 })
+  }
+}

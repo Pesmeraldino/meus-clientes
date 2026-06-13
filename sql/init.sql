@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS sales (
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  order_id UUID,
   quantity INTEGER NOT NULL DEFAULT 1,
   unit_price DECIMAL(10,2) NOT NULL,
   total_price DECIMAL(10,2) GENERATED ALWAYS AS (quantity * unit_price) STORED,
@@ -58,3 +59,4 @@ CREATE INDEX IF NOT EXISTS idx_clients_company_id ON clients(company_id);
 CREATE INDEX IF NOT EXISTS idx_sales_company_id ON sales(company_id);
 CREATE INDEX IF NOT EXISTS idx_sales_client_id ON sales(client_id);
 CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date);
+CREATE INDEX IF NOT EXISTS idx_sales_order_id ON sales(order_id);

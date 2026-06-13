@@ -1,22 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { Navbar } from '@/components/Navbar'
-import { FloatingClientsCanvas } from '@/components/FloatingClientsCanvas'
 import { CreateClientModal } from '@/components/modals/CreateClientModal'
 import { CreateProductModal } from '@/components/modals/CreateProductModal'
 import { CreateSaleModal } from '@/components/modals/CreateSaleModal'
 import { ImportProductsModal } from '@/components/modals/ImportProductsModal'
-import type { Company, Client, Product, Sale, CompanyStats, AuthUser } from '@/types'
+import type { Company, Client, Product, Sale, CompanyStats } from '@/types'
 import { getCompanyColor } from '@/lib/companyColor'
 
 interface Props {
-  user: AuthUser
   company: Company
   initialClients: Client[]
   initialProducts: Product[]
@@ -29,8 +25,8 @@ function fmt(n: number) {
   return `R$ ${Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 function fmtShort(n: number) {
-  if (n >= 1000000) return `R$ ${(n / 1000000).toFixed(1)}M`
-  if (n >= 1000) return `R$ ${(n / 1000).toFixed(1)}k`
+  if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `R$ ${(n / 1_000).toFixed(1)}k`
   return fmt(n)
 }
 function fmtMonth(m: string) {
@@ -47,7 +43,7 @@ const ChartTooltipStyle = {
   boxShadow: 'var(--shadow-md)',
 }
 
-export function EmpresaClient({ user, company, initialClients, initialProducts, initialStats }: Props) {
+export function CompanyDetailPanel({ company, initialClients, initialProducts, initialStats }: Props) {
   const companyColor = getCompanyColor(company.id)
   const [tab, setTab] = useState<TabId>('overview')
   const [clients, setClients] = useState<Client[]>(initialClients)
@@ -80,46 +76,39 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
 
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: 'overview', label: 'Visão geral' },
-    { id: 'clients', label: 'Clientes', count: clients.length },
-    { id: 'products', label: 'Produtos', count: products.length },
-    { id: 'sales', label: 'Vendas', count: sales.length },
+    { id: 'clients',  label: 'Clientes',  count: clients.length },
+    { id: 'products', label: 'Produtos',  count: products.length },
+    { id: 'sales',    label: 'Vendas',    count: sales.length },
   ]
 
   return (
     <>
-      <Navbar user={user} />
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 48px', width: '100%' }}>
+      {/* Scrollable content — sits below the fixed top overlay (72px) */}
+      <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '72px 24px 24px' }}>
 
-        {/* Header */}
-        <div style={{ padding: '24px 0 20px', borderBottom: '1px solid var(--border-muted)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link href="/" style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, textDecoration: 'none' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.78 12.53a.75.75 0 0 1-1.06 0L2.47 8.28a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L4.56 7.25h8.69a.75.75 0 0 1 0 1.5H4.56l3.22 3.22a.75.75 0 0 1 0 1.06z"/></svg>
-            Empresas
-          </Link>
-          <span style={{ color: 'var(--border-default)' }}>/</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {company.image_url ? (
-              <img src={company.image_url} alt={company.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: 32, height: 32, borderRadius: 6, background: companyColor + '22', color: companyColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, border: `1px solid ${companyColor}40` }}>
-                {company.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <h1 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>{company.name}</h1>
-            {company.phone && <span style={{ fontSize: 12, color: 'var(--text-secondary)', padding: '2px 8px', background: 'var(--bg-tertiary)', borderRadius: 100 }}>{company.phone}</span>}
+        {/* Company header */}
+        <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          {company.image_url ? (
+            <img src={company.image_url} alt={company.name} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: companyColor + '22', color: companyColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, border: `1px solid ${companyColor}40` }}>
+              {company.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>{company.name}</h2>
+            {company.phone && <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{company.phone}</p>}
           </div>
         </div>
 
         {/* Stat cards */}
         {stats && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
             {[
               { label: 'Receita total', value: fmtShort(stats.total_revenue) },
-              { label: 'Vendas', value: String(stats.total_sales) },
-              { label: 'Clientes', value: String(stats.total_clients) },
-              { label: 'Produtos', value: String(stats.total_products) },
+              { label: 'Vendas',        value: String(stats.total_sales)     },
+              { label: 'Clientes',      value: String(stats.total_clients)   },
+              { label: 'Produtos',      value: String(stats.total_products)  },
             ].map(s => (
               <div key={s.label} className="stat-card" style={{ borderLeft: `3px solid ${companyColor}` }}>
                 <div className="stat-value" style={{ color: companyColor }}>{s.value}</div>
@@ -130,12 +119,16 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
         )}
 
         {/* Tabs */}
-        <div className="tabs" style={{ marginBottom: 24 }}>
+        <div className="tabs" style={{ marginBottom: 20 }}>
           {tabs.map(t => (
             <button key={t.id} className={`tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
               {t.label}
               {t.count !== undefined && (
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 100, background: tab === t.id ? companyColor + '22' : 'var(--bg-tertiary)', color: tab === t.id ? companyColor : 'var(--text-secondary)', marginLeft: 4 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 100, marginLeft: 4,
+                  background: tab === t.id ? companyColor + '22' : 'var(--bg-tertiary)',
+                  color: tab === t.id ? companyColor : 'var(--text-secondary)',
+                }}>
                   {t.count}
                 </span>
               )}
@@ -143,59 +136,46 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
           ))}
         </div>
 
-        {/* OVERVIEW */}
+        {/* ── OVERVIEW ── */}
         {tab === 'overview' && (
           <div style={{ display: 'grid', gap: 20 }}>
 
-            {/* Revenue chart */}
             {stats && stats.monthly_revenue.length > 0 && (
               <div className="surface" style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 20 }}>Receita mensal — últimos 12 meses</h3>
                 <ResponsiveContainer width="100%" height={220}>
                   <AreaChart data={stats.monthly_revenue.map(r => ({ ...r, revenue: Number(r.revenue), month: fmtMonth(r.month) }))}>
                     <defs>
-                      <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+                      <linearGradient id="panelGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={companyColor} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={companyColor} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} tickFormatter={v => fmtShort(v).replace('R$ ', '')} />
                     <Tooltip contentStyle={ChartTooltipStyle} formatter={(v) => [fmt(Number(v)), 'Receita']} />
-                    <Area type="monotone" dataKey="revenue" stroke="var(--accent)" strokeWidth={2} fill="url(#grad)" dot={false} />
+                    <Area type="monotone" dataKey="revenue" stroke={companyColor} strokeWidth={2} fill="url(#panelGrad)" dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             )}
 
-            {/* Top clients chart + Canvas side by side */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {stats && stats.top_clients.length > 0 && (
-                <div className="surface" style={{ padding: 24 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 20 }}>Top clientes por receita</h3>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={stats.top_clients.map(c => ({ ...c, total: Number(c.total) }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} interval={0} angle={-20} textAnchor="end" height={40} />
-                      <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} tickFormatter={v => fmtShort(v).replace('R$ ', '')} />
-                      <Tooltip contentStyle={ChartTooltipStyle} formatter={(v) => [fmt(Number(v)), 'Total']} />
-                      <Bar dataKey="total" fill="var(--accent)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
+            {stats && stats.top_clients.length > 0 && (
               <div className="surface" style={{ padding: 24 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
-                  Clientes
-                  <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>tamanho = volume de compras</span>
-                </h3>
-                <FloatingClientsCanvas clients={clients} onSelectClient={c => { setSelectedClient(c); setTab('clients') }} />
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 20 }}>Top clientes por receita</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={stats.top_clients.map(c => ({ ...c, total: Number(c.total) }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} interval={0} angle={-20} textAnchor="end" height={40} />
+                    <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} tickFormatter={v => fmtShort(v).replace('R$ ', '')} />
+                    <Tooltip contentStyle={ChartTooltipStyle} formatter={(v) => [fmt(Number(v)), 'Total']} />
+                    <Bar dataKey="total" fill={companyColor} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            </div>
+            )}
 
-            {/* Recent sales */}
             {sales.length > 0 && (
               <div className="surface">
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -204,9 +184,7 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
                 </div>
                 <div className="table-container">
                   <table>
-                    <thead><tr>
-                      <th>Cliente</th><th>Produto</th><th>Qtd</th><th>Total</th><th>Data</th>
-                    </tr></thead>
+                    <thead><tr><th>Cliente</th><th>Produto</th><th>Qtd</th><th>Total</th><th>Data</th></tr></thead>
                     <tbody>
                       {sales.slice(0, 5).map(s => (
                         <tr key={s.id}>
@@ -225,7 +203,7 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
           </div>
         )}
 
-        {/* CLIENTS TAB */}
+        {/* ── CLIENTS ── */}
         {tab === 'clients' && (
           <div style={{ display: 'grid', gap: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -235,28 +213,16 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
                 Novo cliente
               </button>
             </div>
-
-            {/* Search bar */}
             <div style={{ position: 'relative' }}>
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', pointerEvents: 'none' }}>
                 <path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/>
               </svg>
-              <input
-                className="input"
-                type="search"
-                placeholder="Pesquisar por nome, e-mail ou telefone…"
-                value={clientSearch}
-                onChange={e => setClientSearch(e.target.value)}
-                style={{ paddingLeft: 32 }}
-              />
+              <input className="input" type="search" placeholder="Pesquisar por nome, e-mail ou telefone…" value={clientSearch} onChange={e => setClientSearch(e.target.value)} style={{ paddingLeft: 32 }} />
             </div>
-
             {clients.length === 0 ? (
               <div className="surface">
                 <div className="empty-state">
-                  <div className="empty-state-icon">
-                    <svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664h10z"/></svg>
-                  </div>
+                  <div className="empty-state-icon"><svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664h10z"/></svg></div>
                   <p className="empty-state-title">Nenhum cliente ainda</p>
                   <p className="empty-state-desc">Adicione clientes para começar a registrar vendas.</p>
                   <button onClick={() => setShowAddClient(true)} className="btn btn-primary">Adicionar primeiro cliente</button>
@@ -272,13 +238,10 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
               <div className="surface">
                 <div className="table-container">
                   <table>
-                    <thead><tr>
-                      <th>Nome</th><th>E-mail</th><th>Telefone</th><th>Total comprado</th><th>Desde</th>
-                    </tr></thead>
+                    <thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Total comprado</th><th>Desde</th></tr></thead>
                     <tbody>
                       {filteredClients.map(c => (
-                        <tr key={c.id} style={{ cursor: 'pointer' }}
-                          onClick={() => setSelectedClient(selectedClient?.id === c.id ? null : c)}>
+                        <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedClient(selectedClient?.id === c.id ? null : c)}>
                           <td style={{ fontWeight: 600 }}>{c.name}</td>
                           <td style={{ color: 'var(--text-secondary)' }}>{c.email ?? '—'}</td>
                           <td style={{ color: 'var(--text-secondary)' }}>{c.phone ?? '—'}</td>
@@ -301,7 +264,7 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
           </div>
         )}
 
-        {/* PRODUCTS TAB */}
+        {/* ── PRODUCTS ── */}
         {tab === 'products' && (
           <div style={{ display: 'grid', gap: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -317,7 +280,6 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
                 </button>
               </div>
             </div>
-
             {products.length === 0 ? (
               <div className="surface">
                 <div className="empty-state">
@@ -341,7 +303,7 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
           </div>
         )}
 
-        {/* SALES TAB */}
+        {/* ── SALES ── */}
         {tab === 'sales' && (
           <div style={{ display: 'grid', gap: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -351,7 +313,6 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
                 Nova venda
               </button>
             </div>
-
             {(clients.length === 0 || products.length === 0) && (
               <div style={{ background: 'var(--warning-subtle)', border: '1px solid var(--warning)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--warning)' }}>
                 {clients.length === 0 && products.length === 0
@@ -361,7 +322,6 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
                   : 'Cadastre ao menos um produto antes de registrar vendas.'}
               </div>
             )}
-
             {sales.length === 0 ? (
               <div className="surface">
                 <div className="empty-state">
@@ -396,11 +356,11 @@ export function EmpresaClient({ user, company, initialClients, initialProducts, 
             )}
           </div>
         )}
-      </main>
+      </div>
 
-      {showAddClient && <CreateClientModal companyId={company.id} onClose={() => setShowAddClient(false)} onCreated={handleNewClient} />}
-      {showAddProduct && <CreateProductModal companyId={company.id} onClose={() => setShowAddProduct(false)} onCreated={handleNewProduct} />}
-      {showAddSale && <CreateSaleModal companyId={company.id} onClose={() => setShowAddSale(false)} onCreated={handleNewSale} />}
+      {showAddClient    && <CreateClientModal   companyId={company.id} onClose={() => setShowAddClient(false)}    onCreated={handleNewClient}  />}
+      {showAddProduct   && <CreateProductModal  companyId={company.id} onClose={() => setShowAddProduct(false)}   onCreated={handleNewProduct} />}
+      {showAddSale      && <CreateSaleModal     companyId={company.id} onClose={() => setShowAddSale(false)}      onCreated={handleNewSale}    />}
       {showImportProducts && <ImportProductsModal companyId={company.id} onClose={() => setShowImportProducts(false)} onImported={handleImported} />}
 
       {selectedClient && (
