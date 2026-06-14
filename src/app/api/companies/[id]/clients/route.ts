@@ -38,14 +38,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   try {
-    const { name, email, phone } = await req.json()
+    const { name, email, phone, cpf_cnpj, address, city } = await req.json()
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Nome do cliente é obrigatório.' }, { status: 400 })
     }
 
     const [client] = await query<Client>(
-      'INSERT INTO clients (company_id, name, email, phone) VALUES ($1, $2, $3, $4) RETURNING *',
-      [id, name.trim(), email ?? null, phone ?? null]
+      `INSERT INTO clients (company_id, name, email, phone, cpf_cnpj, address, city)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [id, name.trim(), email ?? null, phone ?? null, cpf_cnpj ?? null, address ?? null, city ?? null]
     )
     return NextResponse.json({ client }, { status: 201 })
   } catch (err) {

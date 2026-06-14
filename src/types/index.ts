@@ -40,6 +40,9 @@ export interface Client {
   name: string
   email: string | null
   phone: string | null
+  cpf_cnpj: string | null
+  address: string | null
+  city: string | null
   created_at: string
   updated_at: string
   total_sales?: number

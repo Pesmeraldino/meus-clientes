@@ -79,6 +79,14 @@ const MIGRATIONS: { name: string; sql: string }[] = [
     name: '003_avatar_url',
     sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;`,
   },
+  {
+    name: '004_clients_extra_fields',
+    sql: `
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS cpf_cnpj VARCHAR(20);
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS address TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+    `,
+  },
 ]
 
 export async function runMigrations() {
