@@ -14,6 +14,7 @@ type IbgeMunicipio = {
 }
 
 let cache: string[] | null = null
+let inflight: Promise<string[]> | null = null
 
 function normalize(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -21,10 +22,15 @@ function normalize(s: string) {
 
 async function loadCities(): Promise<string[]> {
   if (cache) return cache
-  const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome')
-  const data: IbgeMunicipio[] = await res.json()
-  cache = data.map(m => `${m.nome} - ${m.microrregiao.mesorregiao.UF.sigla}`)
-  return cache
+  if (inflight) return inflight
+  inflight = fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome')
+    .then(r => r.json())
+    .then((data: IbgeMunicipio[]) => {
+      cache = data.map(m => `${m.nome} - ${m.microrregiao.mesorregiao.UF.sigla}`)
+      inflight = null
+      return cache
+    })
+  return inflight
 }
 
 export function CityAutocomplete({ value, onChange, placeholder }: Props) {
@@ -33,7 +39,6 @@ export function CityAutocomplete({ value, onChange, placeholder }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const allCities = useRef<string[]>([])
 
   useEffect(() => { setInput(value) }, [value])
 
@@ -53,24 +58,26 @@ export function CityAutocomplete({ value, onChange, placeholder }: Props) {
 
     if (!val.trim()) { setOptions([]); setOpen(false); return }
 
-    if (!allCities.current.length) {
-      setLoading(true)
-      allCities.current = await loadCities()
+    if (!cache) setLoading(true)
+    try {
+      const cities = await loadCities()
+      const q = normalize(val)
+      const filtered = cities.filter(c => normalize(c).includes(q)).slice(0, 8)
+      setOptions(filtered)
+      setOpen(filtered.length > 0)
+    } catch {
+      setOptions([])
+      setOpen(false)
+    } finally {
       setLoading(false)
     }
-
-    const q = normalize(val)
-    const filtered = allCities.current
-      .filter(c => normalize(c).includes(q))
-      .slice(0, 8)
-    setOptions(filtered)
-    setOpen(filtered.length > 0)
   }
 
   function select(city: string) {
     setInput(city)
     onChange(city)
     setOpen(false)
+    setOptions([])
   }
 
   return (
@@ -84,8 +91,8 @@ export function CityAutocomplete({ value, onChange, placeholder }: Props) {
         autoComplete="off"
       />
       {loading && (
-        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text-secondary)' }}>
-          carregando…
+        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text-secondary)', pointerEvents: 'none' }}>
+          buscando…
         </div>
       )}
       {open && options.length > 0 && (
@@ -99,10 +106,7 @@ export function CityAutocomplete({ value, onChange, placeholder }: Props) {
             <li
               key={city}
               onMouseDown={() => select(city)}
-              style={{
-                padding: '8px 12px', cursor: 'pointer', fontSize: 13,
-                color: 'var(--text-primary)', transition: 'background 0.1s',
-              }}
+              style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
               onMouseLeave={e => (e.currentTarget.style.background = '')}
             >
