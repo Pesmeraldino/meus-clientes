@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Client } from '@/types'
+import { CityAutocomplete } from '@/components/CityAutocomplete'
 
 interface Props {
   companyId: string
@@ -11,6 +12,7 @@ interface Props {
 
 export function CreateClientModal({ companyId, onClose, onCreated }: Props) {
   const [name, setName] = useState('')
+  const [tradeName, setTradeName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [cpfCnpj, setCpfCnpj] = useState('')
@@ -30,6 +32,7 @@ export function CreateClientModal({ companyId, onClose, onCreated }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
+          trade_name: tradeName || null,
           email: email || null,
           phone: phone || null,
           cpf_cnpj: cpfCnpj || null,
@@ -69,6 +72,10 @@ export function CreateClientModal({ companyId, onClose, onCreated }: Props) {
               <label className="label">Nome *</label>
               <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Nome do cliente" required autoFocus />
             </div>
+            <div className="form-group">
+              <label className="label">Nome fantasia <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}>(opcional)</span></label>
+              <input className="input" value={tradeName} onChange={e => setTradeName(e.target.value)} placeholder="Como o cliente é conhecido" />
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="form-group">
                 <label className="label">E-mail</label>
@@ -89,7 +96,7 @@ export function CreateClientModal({ companyId, onClose, onCreated }: Props) {
             </div>
             <div className="form-group">
               <label className="label">Cidade</label>
-              <input className="input" value={city} onChange={e => setCity(e.target.value)} placeholder="Cidade" />
+              <CityAutocomplete value={city} onChange={setCity} placeholder="Digite para buscar" />
             </div>
           </div>
           <div className="modal-footer">

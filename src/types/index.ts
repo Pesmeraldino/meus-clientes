@@ -38,6 +38,7 @@ export interface Client {
   id: string
   company_id: string
   name: string
+  trade_name: string | null
   email: string | null
   phone: string | null
   cpf_cnpj: string | null
