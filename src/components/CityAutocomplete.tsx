@@ -13,31 +13,18 @@ type IbgeMunicipio = {
   microrregiao: { mesorregiao: { UF: { sigla: string } } }
 }
 
-let cache: string[] | null = null
-let inflight: Promise<string[]> | null = null
+const IBGE_URL = 'https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome'
 
 function normalize(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-}
-
-async function loadCities(): Promise<string[]> {
-  if (cache) return cache
-  if (inflight) return inflight
-  inflight = fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome')
-    .then(r => r.json())
-    .then((data: IbgeMunicipio[]) => {
-      cache = data.map(m => `${m.nome} - ${m.microrregiao.mesorregiao.UF.sigla}`)
-      inflight = null
-      return cache
-    })
-  return inflight
 }
 
 export function CityAutocomplete({ value, onChange, placeholder }: Props) {
   const [input, setInput] = useState(value)
   const [options, setOptions] = useState<string[]>([])
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const cities = useRef<string[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setInput(value) }, [value])
@@ -52,25 +39,36 @@ export function CityAutocomplete({ value, onChange, placeholder }: Props) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  async function ensureCities() {
+    if (cities.current.length > 0) return cities.current
+    setStatus('loading')
+    try {
+      const res = await fetch(IBGE_URL)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: IbgeMunicipio[] = await res.json()
+      cities.current = data.map(m => `${m.nome} - ${m.microrregiao.mesorregiao.UF.sigla}`)
+      setStatus('idle')
+      return cities.current
+    } catch (err) {
+      console.error('[CityAutocomplete] failed to load cities:', err)
+      setStatus('error')
+      return []
+    }
+  }
+
   async function handleChange(val: string) {
     setInput(val)
     onChange(val)
 
     if (!val.trim()) { setOptions([]); setOpen(false); return }
 
-    if (!cache) setLoading(true)
-    try {
-      const cities = await loadCities()
-      const q = normalize(val)
-      const filtered = cities.filter(c => normalize(c).includes(q)).slice(0, 8)
-      setOptions(filtered)
-      setOpen(filtered.length > 0)
-    } catch {
-      setOptions([])
-      setOpen(false)
-    } finally {
-      setLoading(false)
-    }
+    const all = await ensureCities()
+    if (!all.length) return
+
+    const q = normalize(val)
+    const filtered = all.filter(c => normalize(c).includes(q)).slice(0, 8)
+    setOptions(filtered)
+    setOpen(filtered.length > 0)
   }
 
   function select(city: string) {
@@ -90,10 +88,15 @@ export function CityAutocomplete({ value, onChange, placeholder }: Props) {
         placeholder={placeholder ?? 'Digite a cidade'}
         autoComplete="off"
       />
-      {loading && (
-        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text-secondary)', pointerEvents: 'none' }}>
+      {status === 'loading' && (
+        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text-secondary)', pointerEvents: 'none' }}>
           buscando…
-        </div>
+        </span>
+      )}
+      {status === 'error' && (
+        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--danger)', pointerEvents: 'none' }}>
+          erro ao carregar
+        </span>
       )}
       {open && options.length > 0 && (
         <ul style={{
